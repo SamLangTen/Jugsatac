@@ -19,22 +19,8 @@ namespace Jugsatac.Config
         [JsonProperty("mailbox")]
         public string MailBox { get; internal set; }
         [JsonProperty("assignments")]
-        internal IList<AssignmentConfigItem> Assignments { get; set; }
+        public IList<AssignmentConfigItem> Assignments { get; set; }
 
-        internal GeneralConfigItem()
-        {
-
-        }
-
-        public GeneralConfigItem(string host, int port, string username, string password, string mailbox, IList<AssignmentConfigItem> assignments)
-        {
-            Host = host;
-            Port = port;
-            Username = username;
-            Password = password;
-            MailBox = mailbox;
-            Assignments = assignments;
-        }
 
         public static GeneralConfigItem LoadFromFile(string filename)
         {
