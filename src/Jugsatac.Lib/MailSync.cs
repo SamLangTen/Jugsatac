@@ -4,6 +4,12 @@ using System.Collections.Generic;
 using Jugsatac.Lib.Cache;
 using MimeKit;
 using MailKit;
+using MailKit.Net.Imap;
+using Jugsatac.Lib.Exception;
+using MailKit.Search;
+using System.Text.RegularExpressions;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Jugsatac.Lib
 {
@@ -23,6 +29,7 @@ namespace Jugsatac.Lib
             identifier.Password = password;
             identifier.Mailbox = mailbox;
             this.assignments = assignments.ToList();
+            cacheService = new MailCacheService(identifier);
         }
 
 
@@ -58,6 +65,110 @@ namespace Jugsatac.Lib
             return bodyText;
         }
 
+        /// <summary>
+        /// Get all folders in client recursively
+        /// </summary>
+        private List<IMailFolder> RecursiveGetFolder(IMailFolder folder)
+        {
+            var folders = new List<IMailFolder>();
+            foreach (var f in folder.GetSubfolders())
+            {
+                folders.Add(f);
+                folders.AddRange(RecursiveGetFolder(f));
+            }
+            return folders;
+        }
 
+        /// <summary>
+        /// Calculate hash of a string by SHA256
+        /// </summary>
+        /// <param name="original">string</param>
+        private string CalcHash(string original)
+        {
+            using var hasher = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(original);
+            var hash = hasher.ComputeHash(bytes);
+            var sb = new StringBuilder();
+            (from b in hash select b.ToString("X2")).ToList().ForEach(a => sb.Append(a));
+            return sb.ToString();
+
+        }
+
+        /// <summary>
+        /// Get identifier of a series of submitters. This identifier varies in different runs.
+        /// </summary>
+        /// <param name="submitters">A series of submitters</param>
+        private int GetSubmittersIdentifier(List<string> submitters)
+        {
+            int hash = 0;
+            submitters.ForEach(s =>
+            {
+                hash = HashCode.Combine(hash, s.GetHashCode());
+            });
+            return hash;
+        }
+
+        /// <summary>
+        /// Get all available assignments
+        /// </summary>
+        public Assignment[] Assignments { get => assignments.ToArray(); }
+
+        /// <summary>
+        /// Classify specific assignment submission
+        /// </summary>
+        /// <param name="assignment">Assignment information</param>
+        /// <returns>A list of UpdateItem</returns>
+        public List<UpdateItem> Classify(Assignment assignment)
+        {
+            //Initialize IMAP Client
+            using var client = new ImapClient();
+
+            client.Connect(identifier.Host, identifier.Port, true);
+            client.Authenticate(identifier.Username, identifier.Password);
+
+            //Expand all mail folders
+            var allFolders = from n in client.PersonalNamespaces from f in RecursiveGetFolder(client.GetFolder(n)) select f;
+            var specificInBox = allFolders.FirstOrDefault(f => f.FullName == identifier.Mailbox);
+            if (specificInBox == null)
+                throw new MailboxNotFoundException();
+
+            var inbox = specificInBox;
+            inbox.Open(FolderAccess.ReadOnly);
+
+            //Fetch summaries of all mail in specific mailbox
+            var query = SearchQuery.All;
+            var uids = inbox.Search(query);
+            var summaries = inbox.Fetch(uids.ToList(), MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure);
+
+            //Filter specific assignment
+            var filteredCodeMessages = from s in summaries
+                                       where Regex.IsMatch(s.Envelope.Subject, assignment.IdentifierPattern)
+                                       select s;
+
+            //Fetch body content
+            //If a cache is available, it will try to get body text from cache
+            var codeItems = from m in filteredCodeMessages
+                            select new UpdateItem()
+                            {
+                                Names = Regex.Matches(Regex.Replace(m.Envelope.Subject, assignment.IdentifierPattern, ""), assignment.SubmitterPattern).Select(t => t.Value).ToList(),
+                                UpdatedTime = m.Date.LocalDateTime,
+                                Comment = assignment.SubjectOnly ? "" : GetBodyText(m, inbox),
+                                Hash = CalcHash(m.Envelope.From.FirstOrDefault().Name)
+                            };
+
+
+            //For each submitter, only the sender mail address in the first mail
+            //mentioned this submitter can update submission.
+            //The following statements select the latest mail from the first sender for every submitter
+            var codeGroupByNames = from c in codeItems orderby c.UpdatedTime ascending let tile = GetSubmittersIdentifier(c.Names) group c by tile;
+            var availableCodeHashes = from g in codeGroupByNames select new { g.FirstOrDefault().Names, g.FirstOrDefault().Hash };
+            var availableCodeItems = from c in codeItems from h in availableCodeHashes where GetSubmittersIdentifier(c.Names) == GetSubmittersIdentifier(h.Names) && c.Hash == h.Hash orderby c.UpdatedTime descending select c;
+            var latestCodeItems = (from c in availableCodeItems let tile = GetSubmittersIdentifier(c.Names) group c by tile into groupByNames select groupByNames.FirstOrDefault()).ToList();
+
+            //Disconnect from IMAP server
+            client.Disconnect(true);
+
+            return latestCodeItems;
+        }
     }
 }
