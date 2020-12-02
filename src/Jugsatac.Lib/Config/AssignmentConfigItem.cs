@@ -8,15 +8,15 @@ namespace Jugsatac.Lib.Config
     public class AssignmentConfigItem
     {
         [JsonProperty("name")]
-        public string Name { get; set; }
+        public string Name { get; internal set; }
         [JsonProperty("identifierPattern")]
-        public string IdentifierPattern { get; set; }
+        public string IdentifierPattern { get; internal set; }
         [JsonProperty("submitterPattern")]
-        public string SubmitterPattern { get; set; }
+        public string SubmitterPattern { get; internal set; }
         [JsonProperty("onlySubject")]
-        public bool FetchSubjectOnly { get; set; }
+        public bool FetchSubjectOnly { get; internal set; }
         [JsonProperty("hideSubmitterName")]
-        public bool HideSubmitterName { get; set; }
+        public bool HideSubmitterName { get; internal set; }
 
     }
 }

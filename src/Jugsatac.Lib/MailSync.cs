@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using Jugsatac.Lib.Config;
 using Jugsatac.Lib.Cache;
 using MimeKit;
@@ -12,11 +14,17 @@ namespace Jugsatac.Lib
         private GeneralConfigItem generalConfig;
         private MailCacheService cacheService;
 
-        public MailSync(GeneralConfigItem config)
+        private MailSync(GeneralConfigItem config)
         {
             generalConfig = config;
             cacheService = new MailCacheService();
         }
+
+        public MailSync(string configFilename)
+        {
+            generalConfig = GeneralConfigItem.LoadFromFile(configFilename);
+        }
+
 
         /// <summary>
         /// Get text body of mail from cache or server and update cache if available
@@ -50,6 +58,9 @@ namespace Jugsatac.Lib
             return bodyText;
         }
 
-
+        /// <summary>
+        /// Get all available assignments in this mailsync.
+        /// </summary>
+        public AssignmentConfigItem[] Assignments { get => generalConfig.Assignments.ToArray(); }
     }
 }
