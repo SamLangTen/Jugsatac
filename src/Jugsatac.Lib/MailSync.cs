@@ -10,6 +10,7 @@ using MailKit.Search;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography;
 using System.Text;
+using System.IO;
 
 namespace Jugsatac.Lib
 {
@@ -169,6 +170,90 @@ namespace Jugsatac.Lib
             client.Disconnect(true);
 
             return latestCodeItems;
+        }
+
+        /// <summary>
+        /// Download attachments after classifying submissions
+        /// </summary>
+        /// <param name="assignment">Assignments</param>
+        /// <param name="targetDirectory">Directory contained downloaded attachments</param>
+        public void Download(Assignment assignment, string targetDirectory)
+        {
+            //Initialize IMAP Client
+            using var client = new ImapClient();
+
+            client.Connect(identifier.Host, identifier.Port, true);
+            client.Authenticate(identifier.Username, identifier.Password);
+
+            //Expand all mail folders
+            var allFolders = from n in client.PersonalNamespaces from f in RecursiveGetFolder(client.GetFolder(n)) select f;
+            var specificInBox = allFolders.FirstOrDefault(f => f.FullName == identifier.Mailbox);
+            if (specificInBox == null)
+                throw new MailboxNotFoundException();
+
+            var inbox = specificInBox;
+            inbox.Open(FolderAccess.ReadOnly);
+
+            //Fetch summaries of all mail in specific mailbox
+            var query = SearchQuery.All;
+            var uids = inbox.Search(query);
+            var summaries = inbox.Fetch(uids.ToList(), MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure);
+
+            //Filter specific assignment
+            var filteredCodeMessages = from s in summaries
+                                       where Regex.IsMatch(s.Envelope.Subject, assignment.IdentifierPattern)
+                                       select s;
+
+            //Fetch body content
+            //If a cache is available, it will try to get body text from cache
+            var codeItems = from m in filteredCodeMessages
+                            select new
+                            {
+                                Update = new UpdateItem()
+                                {
+                                    Names = Regex.Matches(Regex.Replace(m.Envelope.Subject, assignment.IdentifierPattern, ""), assignment.SubmitterPattern).Select(t => t.Value).ToList(),
+                                    UpdatedTime = m.Date.LocalDateTime,
+                                    Comment = "",
+                                    Hash = CalcHash(m.Envelope.From.FirstOrDefault().Name)
+                                },
+                                Uid = m.UniqueId
+                            };
+
+
+            //For each submitter, only the sender mail address in the first mail
+            //mentioned this submitter can update submission.
+            //The following statements select the latest mail from the first sender for every submitter
+            var codeGroupByNames = from c in codeItems orderby c.Update.UpdatedTime ascending let tile = GetSubmittersIdentifier(c.Update.Names) group c by tile;
+            var availableCodeHashes = from g in codeGroupByNames select new { g.FirstOrDefault().Update.Names, g.FirstOrDefault().Update.Hash };
+            var availableCodeItems = from c in codeItems from h in availableCodeHashes where GetSubmittersIdentifier(c.Update.Names) == GetSubmittersIdentifier(h.Names) && c.Update.Hash == h.Hash orderby c.Update.UpdatedTime descending select c;
+            var latestCodeItems = (from c in availableCodeItems let tile = GetSubmittersIdentifier(c.Update.Names) group c by tile into groupByNames select groupByNames.FirstOrDefault()).ToList();
+
+            //Get filtered mail and download attachments.
+            filteredCodeMessages = from m in filteredCodeMessages from c in latestCodeItems where m.UniqueId == c.Uid select m;
+            filteredCodeMessages.ToList().ForEach(a =>
+            {
+
+                MimeMessage message = client.Inbox.GetMessage(a.UniqueId);
+                foreach (MimeEntity attachment in message.Attachments)
+                {
+                    var fileName = Path.Combine(targetDirectory, attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name);
+                    using (FileStream stream = File.Create(fileName))
+                    {
+                        if (attachment is MessagePart rfc822)
+                        {
+                            rfc822.Message.WriteTo(stream);
+                        }
+                        else if (attachment is MimePart part)
+                        {
+                            part.Content.DecodeTo(stream);
+                        }
+                    }
+                    //Set write time as the time that receives mail.
+                    File.SetLastWriteTime(fileName, a.Date.LocalDateTime);
+                }
+
+            });
+
         }
     }
 }
