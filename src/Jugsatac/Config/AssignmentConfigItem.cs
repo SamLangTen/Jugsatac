@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace Jugsatac.Lib.Config
+namespace Jugsatac.Config
 {
     public class AssignmentConfigItem
     {

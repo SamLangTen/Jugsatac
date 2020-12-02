@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using Jugsatac.Lib.Config;
 using Jugsatac.Lib.Cache;
 using MimeKit;
 using MailKit;
@@ -11,18 +10,19 @@ namespace Jugsatac.Lib
     public class MailSync
     {
 
-        private GeneralConfigItem generalConfig;
+        private List<Assignment> assignments;
         private MailCacheService cacheService;
+        private MailSyncIdentifier identifier = new MailSyncIdentifier();
 
-        private MailSync(GeneralConfigItem config)
-        {
-            generalConfig = config;
-            cacheService = new MailCacheService();
-        }
 
-        public MailSync(string configFilename)
+        public MailSync(string host, int port, string username, string password, string mailbox, List<Assignment> assignments)
         {
-            generalConfig = GeneralConfigItem.LoadFromFile(configFilename);
+            identifier.Host = host;
+            identifier.Port = port;
+            identifier.Username = username;
+            identifier.Password = password;
+            identifier.Mailbox = mailbox;
+            this.assignments = assignments.ToList();
         }
 
 
@@ -58,9 +58,6 @@ namespace Jugsatac.Lib
             return bodyText;
         }
 
-        /// <summary>
-        /// Get all available assignments in this mailsync.
-        /// </summary>
-        public AssignmentConfigItem[] Assignments { get => generalConfig.Assignments.ToArray(); }
+
     }
 }

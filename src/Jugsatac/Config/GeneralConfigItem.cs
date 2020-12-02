@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-namespace Jugsatac.Lib.Config
+namespace Jugsatac.Config
 {
     public class GeneralConfigItem
     {

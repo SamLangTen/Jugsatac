@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
 using System.Linq;
 using System.IO;
 
@@ -10,9 +9,10 @@ namespace Jugsatac.Lib.Cache
     {
 
         private CacheAccountItem cachedAccount;
-
-        public MailCacheService()
+        private MailSyncIdentifier identifier;
+        public MailCacheService(MailSyncIdentifier identifier)
         {
+            this.identifier = identifier;
             cachedAccount = new CacheAccountItem();
             cachedAccount.CachedMails = new List<CacheMailItem>();
         }
@@ -36,16 +36,15 @@ namespace Jugsatac.Lib.Cache
             prop.SetValue(cachedMail, value);
         }
 
-        public void SaveCacheToFile(string filename)
+        public void SaveCache(ICachePersistence persistence)
         {
-            var jsonContent = JsonConvert.SerializeObject(cachedAccount);
-            File.WriteAllText(filename, jsonContent);
+            persistence.SavePersistence(cachedAccount);
         }
 
-        public void LoadCacheFromFile(string filename)
+        public void LoadCache(ICachePersistence persistence)
         {
-            var jsonContent = File.ReadAllText(filename);
-            cachedAccount = JsonConvert.DeserializeObject<CacheAccountItem>(jsonContent);
+            cachedAccount.CachedMails = cachedAccount.CachedMails.Union(persistence.GetPersistentCache(identifier)?.CachedMails).ToList();
         }
+
     }
 }
