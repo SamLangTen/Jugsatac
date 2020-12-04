@@ -10,19 +10,19 @@ namespace Jugsatac.Lib.Cache
 
         private CacheAccountItem cachedAccount;
         private MailSyncIdentifier identifier;
-        public MailCacheService(MailSyncIdentifier identifier)
+        internal MailCacheService(MailSyncIdentifier identifier)
         {
             this.identifier = identifier;
             cachedAccount = new CacheAccountItem();
             cachedAccount.CachedMails = new List<CacheMailItem>();
         }
 
-        public CacheMailItem GetCachedMail(uint mailid)
+        internal CacheMailItem GetCachedMail(uint mailid)
         {
             return cachedAccount.CachedMails.FirstOrDefault(m => m.MailId == mailid);
         }
 
-        public void UpdateCachedMailPart(uint mailid, string partName, string value)
+        internal void UpdateCachedMailPart(uint mailid, string partName, string value)
         {
             var prop = typeof(CacheMailItem).GetProperties().FirstOrDefault(p => p.Name == partName);
 

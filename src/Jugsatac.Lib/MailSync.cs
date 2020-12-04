@@ -18,9 +18,9 @@ namespace Jugsatac.Lib
     {
 
         private List<Assignment> assignments;
-        private MailCacheService cacheService;
         private MailSyncIdentifier identifier = new MailSyncIdentifier();
 
+        public MailCacheService CacheService { get; private set; }
 
         public MailSync(string host, int port, string username, string password, string mailbox, List<Assignment> assignments)
         {
@@ -30,7 +30,7 @@ namespace Jugsatac.Lib
             identifier.Password = password;
             identifier.Mailbox = mailbox;
             this.assignments = assignments.ToList();
-            cacheService = new MailCacheService(identifier);
+            CacheService = new MailCacheService(identifier);
         }
 
 
@@ -43,7 +43,7 @@ namespace Jugsatac.Lib
         private string GetBodyText(IMessageSummary summary, IMailFolder inbox)
         {
             //Get from cache
-            var cachedText = cacheService?.GetCachedMail(summary.UniqueId.Id);
+            var cachedText = CacheService?.GetCachedMail(summary.UniqueId.Id);
             if (cachedText != null)
                 return cachedText.BodyText;
 
@@ -61,7 +61,7 @@ namespace Jugsatac.Lib
             }
 
             //Update cache
-            cacheService?.UpdateCachedMailPart(summary.UniqueId.Id, "BodyText", bodyText);
+            CacheService?.UpdateCachedMailPart(summary.UniqueId.Id, "BodyText", bodyText);
 
             return bodyText;
         }
