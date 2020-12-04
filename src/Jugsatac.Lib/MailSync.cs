@@ -166,6 +166,17 @@ namespace Jugsatac.Lib
             var availableCodeItems = from c in codeItems from h in availableCodeHashes where GetSubmittersIdentifier(c.Names) == GetSubmittersIdentifier(h.Names) && c.Hash == h.Hash orderby c.UpdatedTime descending select c;
             var latestCodeItems = (from c in availableCodeItems let tile = GetSubmittersIdentifier(c.Names) group c by tile into groupByNames select groupByNames.FirstOrDefault()).ToList();
 
+            //Hide submitters' name
+            if (assignment.HideSubmitterName)
+                latestCodeItems = (from c in latestCodeItems
+                                   select new UpdateItem()
+                                   {
+                                       Comment = c.Comment,
+                                       Hash = c.Hash,
+                                       UpdatedTime = c.UpdatedTime,
+                                       Names = (from n in c.Names select string.Join(null, Enumerable.Range(1, n.Length - 1).Select(c => "*")) + n.Last()).ToList()
+                                   }).ToList();
+
             //Disconnect from IMAP server
             client.Disconnect(true);
 

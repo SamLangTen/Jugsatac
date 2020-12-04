@@ -61,20 +61,23 @@ namespace Jugsatac
 
                 }
 
-                //Check args
-                if (configFilename == null)
-                    DisplayUsage();
+            }
 
-                //Run
-                if (!isDownload)
-                {
-                    if (outputFilename == null)
-                        Classification.GenerateClassification(GeneralConfigItem.LoadFromFile(configFilename), cacheFilename, GeneratedResultFileType.Json);
-                    else
-                        Classification.GenerateClassification(GeneralConfigItem.LoadFromFile(configFilename), cacheFilename, outputFilename, GeneratedResultFileType.Json);
-                }
+            //Check args
+            if (configFilename == null)
+            {
+                DisplayUsage();
+                return;
+            }
+                
 
-
+            //Run
+            if (!isDownload)
+            {
+                if (outputFilename == null)
+                    Classification.GenerateClassification(GeneralConfigItem.LoadFromFile(configFilename), cacheFilename, GeneratedResultFileType.Json);
+                else
+                    Classification.GenerateClassification(GeneralConfigItem.LoadFromFile(configFilename), cacheFilename, outputFilename, GeneratedResultFileType.Json);
             }
 
         }
