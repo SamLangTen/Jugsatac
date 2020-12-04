@@ -33,7 +33,6 @@ namespace Jugsatac.Lib
             CacheService = new MailCacheService(identifier);
         }
 
-
         /// <summary>
         /// Get text body of mail from cache or server and update cache if available
         /// </summary>
@@ -148,15 +147,14 @@ namespace Jugsatac.Lib
 
             //Fetch body content
             //If a cache is available, it will try to get body text from cache
-            var codeItems = from m in filteredCodeMessages
-                            select new UpdateItem()
-                            {
-                                Names = Regex.Matches(Regex.Replace(m.Envelope.Subject, assignment.IdentifierPattern, ""), assignment.SubmitterPattern).Select(t => t.Value).ToList(),
-                                UpdatedTime = m.Date.LocalDateTime,
-                                Comment = assignment.SubjectOnly ? "" : GetBodyText(m, inbox),
-                                Hash = CalcHash(m.Envelope.From.FirstOrDefault().Name)
-                            };
-
+            var dict = filteredCodeMessages.ToDictionary(m => new UpdateItem()
+            {
+                Names = Regex.Matches(Regex.Replace(m.Envelope.Subject, assignment.IdentifierPattern, ""), assignment.SubmitterPattern).Select(t => t.Value).ToList(),
+                UpdatedTime = m.Date.LocalDateTime,
+                Comment = "",
+                Hash = CalcHash(m.Envelope.From.FirstOrDefault().Name)
+            }, m => m);
+            var codeItems = dict.Keys;
 
             //For each submitter, only the sender mail address in the first mail
             //mentioned this submitter can update submission.
@@ -165,6 +163,15 @@ namespace Jugsatac.Lib
             var availableCodeHashes = from g in codeGroupByNames select new { g.FirstOrDefault().Names, g.FirstOrDefault().Hash };
             var availableCodeItems = from c in codeItems from h in availableCodeHashes where GetSubmittersIdentifier(c.Names) == GetSubmittersIdentifier(h.Names) && c.Hash == h.Hash orderby c.UpdatedTime descending select c;
             var latestCodeItems = (from c in availableCodeItems let tile = GetSubmittersIdentifier(c.Names) group c by tile into groupByNames select groupByNames.FirstOrDefault()).ToList();
+            latestCodeItems = (from c in latestCodeItems
+                               select new UpdateItem()
+                               {
+                                   Names = c.Names,
+                                   UpdatedTime = c.UpdatedTime,
+                                   Hash = c.Hash,
+                                   Comment = assignment.SubjectOnly ? "" : GetBodyText(dict[c], inbox)
+                               }).ToList();
+
 
             //Hide submitters' name
             if (assignment.HideSubmitterName)
