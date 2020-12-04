@@ -12,9 +12,9 @@ using Jugsatac.Lib.Cache;
 
 namespace Jugsatac
 {
-    class Classification
+    static class Classification
     {
-        private string GenerateClassificationJson(GeneralConfigItem config, string cacheFilename)
+        private static string GenerateClassificationJson(GeneralConfigItem config, string cacheFilename)
         {
             var mailsync = new MailSync(config.Host, config.Port, config.Username, config.Password, config.MailBox, config.Assignments.Select(t => t.ConvertBack()).ToList());
 
@@ -41,14 +41,14 @@ namespace Jugsatac
             return JsonConvert.SerializeObject(assignments);
         }
 
-        public void GenerateClassification(GeneralConfigItem config, string cacheFilename, string outputFilename, GeneratedResultFileType type)
+        public static void GenerateClassification(GeneralConfigItem config, string cacheFilename, string outputFilename, GeneratedResultFileType type)
         {
             var jsonText = "";
             if (type == GeneratedResultFileType.Json)
                 jsonText = GenerateClassificationJson(config, cacheFilename);
             File.WriteAllText(outputFilename, jsonText);
         }
-        public void GenerateClassification(GeneralConfigItem config, string cacheFilename, GeneratedResultFileType type)
+        public static void GenerateClassification(GeneralConfigItem config, string cacheFilename, GeneratedResultFileType type)
         {
             var jsonText = "";
             if (type == GeneratedResultFileType.Json)
