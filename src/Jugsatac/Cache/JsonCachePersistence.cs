@@ -20,14 +20,32 @@ namespace Jugsatac.Cache
 
         public CacheAccountItem GetPersistentCache(MailSyncIdentifier identifier)
         {
+            //If cache does not exists, create it
+            if (!File.Exists(filename))
+            {
+                return new CacheAccountItem()
+                {
+                    Mailbox = identifier.Mailbox,
+                    MailAccount = identifier.Username,
+                    CachedMails = new List<CacheMailItem>()
+                };
+            }
+
+            //If exists, load it
             var jsonText = File.ReadAllText(filename);
-            var cacheAccountDto = JsonConvert.DeserializeObject<CacheAccountItem>(jsonText);
+            var cacheAccountDto = JsonConvert.DeserializeObject<CacheAccountItemDto>(jsonText);
 
             var cacheAccount = new CacheAccountItem()
             {
                 Mailbox = cacheAccountDto.Mailbox,
                 MailAccount = cacheAccountDto.MailAccount,
-                CachedMails = (from m in cacheAccountDto.CachedMails select new CacheMailItem() { MailId = m.MailId, BodyText = m.BodyText }).ToList()
+                LastUid = cacheAccountDto.LastUid,
+                CachedMails = (from m in cacheAccountDto.CachedMails
+                               select new CacheMailItem()
+                               {
+                                   MailId = m.MailId,
+                                   BodyText = m.BodyText
+                               }).ToList()
             };
             return cacheAccount;
         }
@@ -38,7 +56,13 @@ namespace Jugsatac.Cache
             {
                 Mailbox = cache.Mailbox,
                 MailAccount = cache.MailAccount,
-                CachedMails = (from m in cache.CachedMails select new CacheMailItemDto() { MailId = m.MailId, BodyText = m.BodyText }).ToList()
+                LastUid = cache.LastUid,
+                CachedMails = (from m in cache.CachedMails
+                               select new CacheMailItemDto()
+                               {
+                                   MailId = m.MailId,
+                                   BodyText = m.BodyText
+                               }).ToList()
             };
             var jsonText = JsonConvert.SerializeObject(cacheAccountDto);
             File.WriteAllText(filename, jsonText);

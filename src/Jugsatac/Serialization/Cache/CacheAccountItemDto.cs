@@ -11,6 +11,8 @@ namespace Jugsatac.Serialization
         public string MailAccount { get; set; }
         [JsonProperty("mailbox")]
         public string Mailbox { get; set; }
+        [JsonProperty("lastUid")]
+        public uint LastUid { get; set; }
         [JsonProperty("caches")]
         public IList<CacheMailItemDto> CachedMails { get; set; }
     }

@@ -13,8 +13,12 @@ namespace Jugsatac.Lib.Cache
         internal MailCacheService(MailSyncIdentifier identifier)
         {
             this.identifier = identifier;
-            cachedAccount = new CacheAccountItem();
-            cachedAccount.CachedMails = new List<CacheMailItem>();
+            cachedAccount = new CacheAccountItem()
+            {
+                MailAccount = identifier.Username,
+                Mailbox = identifier.Mailbox,
+                CachedMails = new List<CacheMailItem>()
+            };
         }
 
         internal CacheMailItem GetCachedMail(uint mailid)
@@ -30,6 +34,7 @@ namespace Jugsatac.Lib.Cache
             if (cachedMail == null)
             {
                 cachedMail = new CacheMailItem();
+                cachedMail.MailId = mailid;
                 cachedAccount.CachedMails.Add(cachedMail);
             }
 
