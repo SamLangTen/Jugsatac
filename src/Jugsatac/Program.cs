@@ -10,7 +10,15 @@ namespace Jugsatac
     {
         static void DisplayUsage()
         {
-
+            Console.WriteLine("Usage: Jugsatac [OPTION]... -s CONFIG_FILE");
+            Console.WriteLine("   or: Jugsatac [OPTION]... -s CONFIG_FILE -o OUTPUT_FILE");
+            Console.WriteLine("   or: Jugsatac [OPTION]... -s CONFIG_FILE -o OUTPUT_DIRECTORY -d");
+            Console.WriteLine("In the 1st form, fetch and classify mails according to CONFIG_FILE and output to console.");
+            Console.WriteLine("In the 2nd form, fetch and classify mails according to CONFIG_FILE and output to OUTPUT_FILE.");
+            Console.WriteLine("In the 3rd form, download attachments and save to OUTPUT_DIRECTORY");
+            Console.WriteLine("");
+            Console.WriteLine("Options:");
+            Console.WriteLine("  -c CACHE_FILE\t\t\tload persistence saved cache file.");
         }
 
         static void Main(string[] args)
