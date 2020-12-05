@@ -23,12 +23,7 @@ namespace Jugsatac
             string nextValue = "no";
             for (int i = 0; i < args.Length; i++)
             {
-                if (nextValue == "no" && i == args.Length - 1)
-                {
-                    DisplayUsage();
-                    return;
-                }
-                else if (nextValue == "no")
+                if (nextValue == "no")
                 {
                     if (args[i] == "-c")
                         nextValue = "cache";
@@ -69,7 +64,7 @@ namespace Jugsatac
                 DisplayUsage();
                 return;
             }
-                
+
 
             //Run
             if (!isDownload)
@@ -78,6 +73,17 @@ namespace Jugsatac
                     Classification.GenerateClassification(GeneralConfigItem.LoadFromFile(configFilename), cacheFilename, GeneratedResultFileType.Json);
                 else
                     Classification.GenerateClassification(GeneralConfigItem.LoadFromFile(configFilename), cacheFilename, outputFilename, GeneratedResultFileType.Json);
+            }
+            else
+            {
+                if (outputFilename == null)
+                {
+                    DisplayUsage();
+                    return;
+                }
+
+                Download.GenerateDownload(GeneralConfigItem.LoadFromFile(configFilename), outputFilename);
+
             }
 
         }

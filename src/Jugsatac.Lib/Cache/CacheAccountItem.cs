@@ -9,6 +9,7 @@ namespace Jugsatac.Lib.Cache
 
         public string Mailbox { get; set; }
  
+        public uint LastUid { get; set; }
         public IList<CacheMailItem> CachedMails { get; set; }
     }
 }
