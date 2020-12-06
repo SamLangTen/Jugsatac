@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.js"></script>
+    <title>JNU PGS AI 2020 占坑列表</title>
+    <style>
+        table,
+        table tr th,
+        table tr td {
+            border: 1px solid;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>JNU PGS AI 2020 占坑列表</h1>
+    <div id="app">
+
+        <div v-for="(item, index) in collections">
+            <p>
+                <input type="checkbox" :id="'ckb'+String(index)" v-model="item.visible">
+                <label :for="'ckb'+String(index)">{{item.name}}</label>
+            </p>
+        </div>
+
+        <div v-for="item in collections">
+            <div v-if="item.visible==true">
+                <h2>{{item.name}}</h2>
+                <p>（按提交时间排序）</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th v-if="item.hasComment">内容</th>
+                            <th>提交时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="code in item.content">
+                            <td>
+                                <span v-for="name in code.names"> {{name}} </span>
+                            </td>
+                            <td v-if="item.hasComment"> {{code.comment}} </td>
+                            <td> {{code.updatedTime}} </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                collections: {}
+            },
+            mounted() {
+                axios
+                    .get("/info.json")
+                    .then(response => {
+                        var _collections = Array();
+                        response["data"].forEach(t => {
+                            var content = t["updates"].sort(function (a, b) {
+                                var adate = new Date(a["updatedTime"]);
+                                var bdate = new Date(b["updatedTime"]);
+                                if (adate > bdate) return 1;
+                                if (adate < bdate) return -1;
+                                else return 0;
+                            });
+
+                            var actualComment = 0;
+                            t["updates"].forEach(c => {
+                                if (c["comment"] != "") {
+                                    actualComment++;
+                                    return;
+                                }
+                            });
+
+                            _collections.push({
+                                name: t["name"],
+                                content: content,
+                                visible: false,
+                                hasComment: actualComment != 0
+                            });
+                            this.collections = _collections;
+                        });
+                    })
+                    .catch(function (error) { // 请求失败处理
+                        console.log(error);
+                    });
+            }
+        })
+    </script>
+</body>
+
+</html>
