@@ -12,6 +12,9 @@
             border: 1px solid;
             white-space: pre-wrap;
         }
+        table {
+            word-break:break-all;
+        }
     </style>
 </head>
 
@@ -33,9 +36,9 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>姓名</th>
+                            <th style="width:10%;">姓名</th>
                             <th v-if="item.hasComment">内容</th>
-                            <th>提交时间</th>
+                            <th style="width:18%;">提交时间</th>
                         </tr>
                     </thead>
                     <tbody>
