@@ -18,6 +18,7 @@ RUN apt update && \
     cp /app/frontend/config/github_ssh_key.pem ~/.ssh/id_rsa && \
     ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts && \
     chmod 600 ~/.ssh/id_rsa && \
+    chmod +x /app/frontend/entrypoint.sh && \
     git config --global user.email "${GIT_EMAIL}" && \
     git config --global user.username "${GIT_NAME}"
 
